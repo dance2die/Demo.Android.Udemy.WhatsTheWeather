@@ -1,5 +1,6 @@
 package com.dance2die.demoandroidudemywhatstheweather;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -10,7 +11,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,15 +31,19 @@ public class MainActivity extends AppCompatActivity {
     private final String API_URL = "http://api.openweathermap.org/data/2.5/forecast/city?q=%s&APPID=286c90a2b702c059135ae9f427fbc5ac";
 
     private EditText cityName;
+    private TextView resultTextView;
 
     public void findWeather(View view) {
         String url = null;
         try {
             url = String.format(API_URL, URLEncoder.encode(cityName.getText().toString(), "UTF-8"));
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG).show();
         }
         Log.i("QUERY", url);
+
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(cityName.getWindowToken(), 0);   // 0: it can be anything for a flag.
 
         DownloadTask task = new DownloadTask();
         task.execute(url);
@@ -64,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
                 return result;
             } catch (Exception e) {
-                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG).show();
             }
 
             return null;
@@ -80,15 +88,27 @@ public class MainActivity extends AppCompatActivity {
 //
 //                Log.i("Website Content", weatherInfo);
 
+                String message = "";
                 JSONArray listArray = jsonObject.getJSONArray("list");
                 for (int i = 0; i < listArray.length(); i++){
                     JSONObject jsonPart = listArray.getJSONObject(i).getJSONArray("weather").getJSONObject(0);
 
-                    Log.i("main", jsonPart.getString("main"));
-                    Log.i("description", jsonPart.getString("description"));
+                    String main = jsonPart.getString("main");
+                    String description = jsonPart.getString("description");
+
+                    message += main + ": " + description + "\r\n";
+
+//                    Log.i("main", jsonPart.getString("main"));
+//                    Log.i("description", jsonPart.getString("description"));
+                }
+
+                if (message != "") {
+                    resultTextView.setText(message);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG).show();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -110,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         cityName = (EditText) findViewById(R.id.cityName);
+        resultTextView = (TextView) findViewById(R.id.resultTextView);
     }
 
     @Override
